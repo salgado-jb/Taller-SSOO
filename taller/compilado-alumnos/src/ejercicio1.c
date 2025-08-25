@@ -23,7 +23,7 @@ void sigterm_handler(int signum) {
     int rand = generate_random_number();
 
     if (rand == numero_maldito){
-        printf("Soy proceso hijo: %d, mori", getpid());
+        printf("Soy proceso hijo: %d, mori\n", getpid());
         exit(0);
     }
 }
@@ -56,22 +56,23 @@ int main(int argc, char const *argv[]){
             lista_hijos[hijo_actual] = hijo_pid;
         }
         else{
-            break;
+        signal(SIGTERM, sigterm_handler);
+        while (1){}
         }
     }
     
+    sleep(1);
+
     if (getpid() == pid_padre){
         signal(SIGCHLD, sigchld_handler);
         for (int i = 0; i< rondas; i++){
             for (int hijo_actual = 0; hijo_actual < n; hijo_actual++){
-                kill(lista_hijos[hijo_actual], SIGTERM);
-                sleep(1);
+                if (lista_hijos[hijo_actual] != -1){
+                    kill(lista_hijos[hijo_actual], SIGTERM);
+                    sleep(1);
+                }
             }
         }
-    }
-    else{
-        signal(SIGTERM, sigterm_handler);
-        while (1){}
     }
     
     
