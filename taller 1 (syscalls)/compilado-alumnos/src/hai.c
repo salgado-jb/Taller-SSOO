@@ -27,11 +27,9 @@ int main(int argc, char* argv[]) {
 	for (int i = 1; i < argc; i++){
 		argumentos[i - 1] = argv[i];
 	}
-
 	argumentos[argc - 1] = NULL;
 
 	int pid_hijo = fork();
-
 
 	if (pid_hijo != 0) {
 		signal(SIGINT, sigint_handler);
@@ -50,7 +48,13 @@ int main(int argc, char* argv[]) {
 }
 
 //cuando uso execve tengo que poner: ./hai /bin/echo "Hola"
-//cuando uso execvp puso usar ./hai echo "Hola"
-//El ultimo elemento del array de argumentos tiene que ser NULL
+//cuando uso execvp puedo usar ./hai echo "Hola"
+//El ultimo elemento del array de argumentos tiene que ser NULL y el primero el nombre de la funcion
 //Se apagaba por problema de la computadora??
 //Puede que falte un wait al final
+
+/*
+1) dos procesos
+
+2) 
+*/

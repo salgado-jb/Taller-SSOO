@@ -15,7 +15,7 @@ all: $(TARGET) 						# Target que se ejecuta si no se especifica ningun target
 $(TARGET): $(TARGET).o				# $@ contiene el nombre del target actual, $^ contiene todos los prerequisitos
 	$(CC) $(CFLAGS) $^ -o $@
 
-$(TARGET).o: $(TARGET).c					# $< contiene el primer requisito (dependecia)
+$(TARGET).o: $(TARGET).c			# $< contiene el primer requisito (dependencia)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
