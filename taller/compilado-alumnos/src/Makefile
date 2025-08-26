@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic
-TARGET = ejercicio1
+TARGET = hai
 
 # Comprobamos el sistema operativo
 ifeq ($(OS),Windows_NT)

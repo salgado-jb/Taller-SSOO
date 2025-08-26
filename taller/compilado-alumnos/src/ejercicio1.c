@@ -87,3 +87,9 @@ int main(int argc, char const *argv[]){
     }
     exit(0);
 }
+
+/*
+1) dos procesos
+
+2) 
+*/
