@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 	} else {
 		signal(SIGURG, sigurg_handler);
 		while(contador_ya_va < 5) {}
-		kill(getppid(), SIGINT);
+		kill(getppid(), SIGINT);		//esto le va a decir al padre que espere
 		execvp(funcion, argumentos);
 	}
 	return 0;
