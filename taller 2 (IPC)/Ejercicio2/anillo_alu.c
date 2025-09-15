@@ -27,6 +27,7 @@ int main(int argc, char **argv)
 	}
 	int pipe_resultado[2][2];
 	pipe(pipe_resultado[1]);
+	pipe(pipe_resultado[0]);
 	enum {READ, WRITE};
 	int numero_secreto;
 	int children[n];
@@ -48,9 +49,14 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+
+
 	if(getpid() == pid_padre){
-		dup2(READ, pipe_resultado[0]);
-		write(pipes[start][WRITE],&buffer, sizeof(int));
+		write(pipe_resultado[0][WRITE], &buffer, sizeof(int));
+		for (size_t i = 0; i < n; i++){
+				close(pipes[i][READ]);
+				close(pipes[i][WRITE]);	
+		}	
 		wait(NULL);
 		read(pipe_resultado[1][READ],&result,sizeof(int) );
 		hijo_numero = -1;
@@ -62,41 +68,23 @@ int main(int argc, char **argv)
 	}else{
 		if(hijo_numero ==start ){
 			int primer_numero;
-			read(pipes[hijo_numero][READ],&primer_numero,sizeof(int));
+			read(pipe_resultado[0][READ], &primer_numero, sizeof(int));
 			numero_secreto = generate_random_number();
-			
-			/*if(hijo_numero != 0){
-				dup2(WRITE,pipes[hijo_numero % n][READ]);
-				dup2(READ, pipes[hijo_numero-1][WRITE]);
-			}else{
-				dup2(WRITE,pipes[hijo_numero % n][READ]);
-				dup2(READ, pipes[n][WRITE]);
-			}*/
 			write(pipes[hijo_numero][WRITE], &primer_numero, sizeof(int));
 
-		}else{
-			/*if(hijo_numero !=0){
-				dup2(WRITE,pipes[hijo_numero % n][READ]);
-				dup2(READ, pipes[hijo_numero -1][WRITE]);
-			}else{
-				dup2(WRITE,pipes[hijo_numero ][READ]);
-				dup2(READ, pipes[n][WRITE]);
-			}*/
 		}
-		
 	}	
 	
     if(hijo_numero == start){
 		while(1){
 			int numero_recibido;
 			if (hijo_numero == 0){
-				read(pipes[n][READ],&numero_recibido, sizeof(int) );
+				read(pipes[n-1][READ],&numero_recibido, sizeof(int) );
 			}
 			else{
 				read(pipes[hijo_numero-1][READ],&numero_recibido, sizeof(int) );
 			}
 			if(numero_recibido >= numero_secreto){
-				/*dup2(WRITE, pipe_resultado[1]);*/
 				write(pipe_resultado[1][WRITE], &numero_recibido, sizeof(int));
 				exit(0);
 			}else{
@@ -109,7 +97,7 @@ int main(int argc, char **argv)
 		while(1){
 			int numero_recibido;
 			if (hijo_numero == 0){
-				read(pipes[n][READ],&numero_recibido, sizeof(int) );
+				read(pipes[n-1][READ],&numero_recibido, sizeof(int) );
 			}
 			else{
 				read(pipes[hijo_numero-1][READ],&numero_recibido, sizeof(int) );

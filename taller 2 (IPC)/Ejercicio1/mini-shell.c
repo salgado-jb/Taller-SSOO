@@ -37,32 +37,48 @@ static int run(char ***progs, size_t count)
 	//TODO: Pensar cuantos procesos necesito
 	//TODO: Pensar cuantos pipes necesito.
 
-	if(getpid() == pid_padre){
-		dup2(WRITE,pipes[count][WRITE]);
-		void* resultado;
-		read(pipes[count][READ], &resultado, sizeof(void*));
-	}else{
-		if(hijo_numero != count){
-			dup2(pipes[hijo_numero][WRITE],WRITE);
+	if(getpid() != pid_padre){
+		if(hijo_numero != count-1){
+			dup2(pipes[hijo_numero][WRITE],STD_OUTPUT);
 			if(hijo_numero != 0){
-				dup2(pipes[hijo_numero-1][READ],READ);
-			}else{
-				dup2(pipes[hijo_numero][READ],READ);
+				for (size_t i = 0; i < count; i++)
+				{
+					if(i != hijo_numero){
+						close(pipes[i][WRITE]);
+					}
+					if(i != hijo_numero-1){
+						close(pipes[i][READ]);
+					}
+				}
+				
+				dup2(pipes[hijo_numero-1][READ],STD_INPUT);
 			}
 		}else{
-				dup2(pipes[hijo_numero-1][READ],READ);
-				dup2(pipes[hijo_numero][WRITE],WRITE);
+				dup2(pipes[hijo_numero-1][READ],STD_INPUT);
+				for (size_t i = 0; i < count; i++)
+				{
+					close(pipes[i][WRITE]);
+					if(i != hijo_numero-1){
+						close(pipes[i][READ]);
+					}
+				}
 		}
 
 		if(hijo_numero == 0){
-			void* result = execlp(progs[0][0],progs[0],NULL);
+			void* result = execvp(progs[0][0],progs[0]);
+			close(pipes[hijo_numero][WRITE]);
 		}else{
-			void* result = execlp(progs[hijo_numero][0],progs[hijo_numero],NULL);
+			void* result = execvp(progs[hijo_numero][0],progs[hijo_numero]);
+			close(pipes[hijo_numero][WRITE]);
+			close(pipes[hijo_numero-1][READ]);	
 		}
-
-
 		exit(0);
-	}	
+	}else{
+		for(int i = 0; i<count;i++){
+			close(pipes[i][WRITE]);
+			close(pipes[i][READ]);
+		}
+	}
 	//TODO: Para cada proceso hijo:
 			//1. Redireccionar los file descriptors adecuados al proceso
 			//2. Ejecutar el programa correspondiente

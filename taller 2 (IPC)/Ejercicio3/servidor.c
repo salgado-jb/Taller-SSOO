@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#define SOCK_PATH "/tmp/servidortaller"
+
 int calcular(const char *expresion) {
     int num1, num2, resultado;
     char operador;
@@ -47,9 +49,35 @@ int main() {
      
     // COMPLETAR. Este es un ejemplo de funcionamiento básico.
     // La expresión debe ser recibida como un mensaje del cliente hacia el servidor.
-    const char *expresion = "10+5";  
-    int resultado = calcular(expresion);
-    printf("El resultado de la operación es: %d\n", resultado);
+    struct sockaddr_un addr;
+    addr.sun_family = AF_UNIX;
+    strcpy(addr.sun_path, SOCK_PATH);
+
+    int listenfd = socket(AF_UNIX,SOCK_STREAM,0);
+    unlink(SOCK_PATH);
+    bind(listenfd,(struct sockaddr*) &addr, sizeof(addr));
+    listen(listenfd, 5);
+
+    while(1){
+
+        int clientefd = accept(listenfd,NULL,NULL);
+        int pid_hijo_servidor = fork();
+
+        if(pid_hijo_servidor == 0){
+           while(1){
+            void* operacion;
+            ssize_t bytes = recv(clientefd, &operacion, sizeof(void*), 0);
+            if(bytes == 0){
+                break;
+            }
+            int resultado = calcular(&operacion);
+            send(clientefd, &resultado, sizeof(int),0);
+            printf("El resultado de la operación es: %d\n", resultado);
+            }
+            exit(0);
+        }
+
+    }
     exit(0);
 }
 
