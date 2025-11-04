@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  external:
+    # COMPLETAR
+    build:
+      context: .
+      target: external
+    ports:
+      - "8080:8080"
+  
+
+  local:
+    # COMPLETAR
+    build:
+      context: .
+      target: local
+    environment:
+      - EXTERNAL_HOST=external
+    depends_on:
+      - external
