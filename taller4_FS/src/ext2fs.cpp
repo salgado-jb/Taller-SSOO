@@ -278,9 +278,9 @@ unsigned int Ext2FS::blockaddr2sector(unsigned int block)
  */
 struct Ext2FSInode * Ext2FS::load_inode(unsigned int inode_number)
 {
-	//TODO: Ejercicio 2
 	int block_size = 1024 << _superblock->log_block_size;
 
+	//TODO: Ejercicio 2
 
 	int group_number = blockgroup_for_inode(inode_number);
 	int inode_index_in_group = blockgroup_inode_index(inode_number);
@@ -292,19 +292,12 @@ struct Ext2FSInode * Ext2FS::load_inode(unsigned int inode_number)
 
 	int offset = (inode_index_in_group % inodes_per_block) * _superblock->inode_size;
 
-
-
-
-
 	unsigned char* block_to_copy = (unsigned char*) malloc(block_size);
-	read_block( target_block, block_to_copy);
+	read_block(target_block, block_to_copy);
 
 	struct Ext2FSInode* inode_copy = (struct Ext2FSInode*) malloc(sizeof(struct Ext2FSInode));
 
 	memcpy(inode_copy, block_to_copy+offset, sizeof(struct Ext2FSInode));
-	//for (int i; i < 1024; i++){
-	//	inode_copy[i] = block_to_copy[offset + i];
-	//}
 
 	free(block_to_copy);
 	return inode_copy;
@@ -312,41 +305,38 @@ struct Ext2FSInode * Ext2FS::load_inode(unsigned int inode_number)
 
 unsigned int Ext2FS::get_block_address(struct Ext2FSInode * inode, unsigned int block_number)
 {
-
 	int block_size = 1024 << _superblock->log_block_size;
-	
 
 	//TODO: Ejercicio 1
 
-	int indirect_block_size = block_size / 4;
+	int indirect_block_size = block_size / 4;	//en esta implementación, las direcciones LBA ocupan 4 bytes
 
 	if (block_number < 12){
 		return inode->block[block_number];
 	}
 	else{
-
-		block_number = block_number - 12;
+		block_number -= 12;
 
 		if (block_number < indirect_block_size){
 			unsigned char* data_table = (unsigned char*) malloc(block_size);
 			read_block(inode->block[12], data_table);
 			return ((unsigned int*) data_table)[block_number];
 		}
-
-		block_number = block_number - indirect_block_size;
-
-		int l1_table_index = block_number / indirect_block_size;
-
-		unsigned int* l1_data_table = (unsigned int*) malloc(block_size);
-		unsigned int* l2_data_table = (unsigned int*) malloc(block_size);
-
-		read_block(inode->block[13], (unsigned char*)l1_data_table);
-		read_block(l1_data_table[l1_table_index],(unsigned char*) l2_data_table);
-
-		int l2_table_index = block_number % indirect_block_size;
-
-		return ((unsigned int*) l2_data_table)[l2_table_index];
-
+		else{
+			block_number -= indirect_block_size;
+	
+			int l1_table_index = block_number / indirect_block_size;
+	
+			unsigned int* l1_data_table = (unsigned int*) malloc(block_size);
+			unsigned int* l2_data_table = (unsigned int*) malloc(block_size);
+	
+			read_block(inode->block[13], (unsigned char*) l1_data_table);
+			read_block(l1_data_table[l1_table_index], (unsigned char*) l2_data_table);
+	
+			int l2_table_index = block_number % indirect_block_size;
+	
+			return ((unsigned int*) l2_data_table)[l2_table_index];
+		}
 	}
 }
 
@@ -363,45 +353,38 @@ struct Ext2FSInode * Ext2FS::get_file_inode_from_dir_inode(struct Ext2FSInode * 
 	if(from == NULL)
 		from = load_inode(EXT2_RDIR_INODE_NUMBER);
 	
-	
 	//std::cerr << *from << std::endl;
 	assert(INODE_ISDIR(from));
-
+	
 	int block_size = 1024 << _superblock->log_block_size;
+	
+	//TODO: Ejercicio 3
 
-	int offset_block = 0;
-	int total = 0;
-	unsigned char* block_to_search= (unsigned char*)malloc(block_size*2);
-	for(int i = 0; i< from->size/block_size +1;i++){
-		if (total > from -> size){
-			break;
-		}
-		unsigned int LBA = get_block_address(from, i);
-		unsigned int LBA_next = get_block_address(from, i+1);
+	unsigned char* block_to_search = (unsigned char*) malloc(block_size*2);
+	
+	int total_offset = 0;
+	int block_count = 0;
+	while(block_count < from->size/block_size && total_offset < from->size){
+		unsigned int LBA = get_block_address(from, block_count);
+		unsigned int LBA_next = get_block_address(from, block_count+1);
 
 		read_block(LBA, block_to_search);
 		read_block(LBA_next, block_to_search + block_size);
 
-		while(offset_block < block_size && total < from->size){
-			Ext2FSDirEntry* dirEntry;
-			dirEntry = ((Ext2FSDirEntry*) (block_to_search + offset_block));
+		int block_offset = 0;
+		while(block_offset < block_size && total_offset < from->size){
+			Ext2FSDirEntry* dirEntry = (Ext2FSDirEntry*) (block_to_search + block_offset);
 			
-			if(strlen(filename) == dirEntry->name_length && !strncmp(filename, dirEntry->name, dirEntry->name_length)){
-				
+			if(strlen(filename) == dirEntry->name_length && !strncmp(filename, dirEntry->name, dirEntry->name_length))
 				return load_inode(dirEntry->inode); 
-			};
 			
-			offset_block += dirEntry->record_length;
-			total += dirEntry->record_length;
+			block_offset += dirEntry->record_length;
+			total_offset += dirEntry->record_length;
 		}
-		offset_block -= block_size;
-	};
 
-	
+		block_count++;
+	}
 	return NULL;
-
-	//TODO: Ejercicio 3
-
 }
 
 
